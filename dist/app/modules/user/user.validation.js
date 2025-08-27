@@ -31,9 +31,6 @@ exports.createUserZodSchema = zod_1.default.object({
     }),
     phone: zod_1.default
         .string()
-        .regex(/^\+?[1-9]\d{1,14}$/, {
-        message: "Phone number must be a valid international number in E.164 format",
-    })
         .optional(),
     address: zod_1.default
         .string()

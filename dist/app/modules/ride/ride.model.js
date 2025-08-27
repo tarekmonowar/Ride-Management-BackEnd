@@ -39,6 +39,10 @@ const ride_interface_1 = require("./ride.interface");
 const pointSchema = new mongoose_1.default.Schema({
     type: { type: String, enum: ["Point"], default: "Point" },
     coordinates: { type: [Number], required: true },
+    address: {
+        type: String,
+        required: false,
+    },
 });
 const rideSchema = new mongoose_1.default.Schema({
     rider: {

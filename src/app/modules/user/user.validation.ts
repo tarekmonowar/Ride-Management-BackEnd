@@ -26,10 +26,7 @@ export const createUserZodSchema = z.object({
     }),
   phone: z
     .string()
-    .regex(/^\+?[1-9]\d{1,14}$/, {
-      message:
-        "Phone number must be a valid international number in E.164 format",
-    })
+
     .optional(),
 
   address: z

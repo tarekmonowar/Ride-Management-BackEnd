@@ -41,10 +41,19 @@ const acceptRide = async (rideId, driverId) => {
         throw new AppError_1.default(http_status_codes_1.default.BAD_REQUEST, "Driver Not Approved by admin");
     }
     if (!driver.isAvailable) {
-        throw new AppError_1.default(http_status_codes_1.default.BAD_REQUEST, "Driver is currently unavailable or already on a ride.");
+        throw new AppError_1.default(http_status_codes_1.default.BAD_REQUEST, "You are currently unavailable");
     }
     if (driver.cancelledRidesCount >= MAX_CANCEL_LIMIT) {
         throw new AppError_1.default(http_status_codes_1.default.BAD_REQUEST, "Driver not available due to too many cancellations.");
+    }
+    const activeRider = await ride_model_1.Ride.findOne({
+        driver: new mongoose_1.Types.ObjectId(driverId),
+        status: {
+            $in: [ride_interface_1.RideStatus.ACCEPTED, ride_interface_1.RideStatus.PICKED_UP, ride_interface_1.RideStatus.IN_TRANSIT],
+        },
+    });
+    if (activeRider) {
+        throw new AppError_1.default(http_status_codes_1.default.BAD_REQUEST, "You already have an active ride. Finish it before accepting a new one.");
     }
     ride.driver = new mongoose_1.Types.ObjectId(driverId);
     ride.status = ride_interface_1.RideStatus.ACCEPTED;
@@ -53,6 +62,23 @@ const acceptRide = async (rideId, driverId) => {
     await driver.save();
     await ride.save();
     return ride;
+};
+//*-----------------------------------------------------------------currentRide------------------------------------------
+const currentRide = async (driverId) => {
+    const driver = await user_model_1.User.findById(driverId);
+    if (!driver || !driver.isApproved) {
+        throw new AppError_1.default(http_status_codes_1.default.BAD_REQUEST, "Driver Not Found");
+    }
+    const ongoingRide = await ride_model_1.Ride.findOne({
+        driver: driverId,
+        status: {
+            $in: [ride_interface_1.RideStatus.ACCEPTED, ride_interface_1.RideStatus.PICKED_UP, ride_interface_1.RideStatus.IN_TRANSIT],
+        },
+    });
+    if (!ongoingRide) {
+        throw new AppError_1.default(http_status_codes_1.default.BAD_REQUEST, "You have not ongoing ride");
+    }
+    return ongoingRide;
 };
 //*-----------------------------------------------------------------updateAvailability------------------------------------------
 const updateAvailability = async (driverId, isAvailable) => {
@@ -67,5 +93,6 @@ const updateAvailability = async (driverId, isAvailable) => {
 exports.DriverService = {
     getAvailableRides,
     acceptRide,
+    currentRide,
     updateAvailability,
 };

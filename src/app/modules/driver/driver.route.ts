@@ -13,16 +13,21 @@ router.get(
 );
 
 router.patch(
-  "/accept/:id",
-  checkAuth(Role.DRIVER),
-  DriverController.acceptRide,
-);
-
-router.patch(
   "/availability",
   validateRequest(updateAvailabilitySchema),
   checkAuth(Role.DRIVER),
   DriverController.updateAvailability,
+);
+router.get(
+  "/currentRide",
+  checkAuth(Role.DRIVER),
+  DriverController.currentRide,
+);
+
+router.patch(
+  "/accept/:id",
+  checkAuth(Role.DRIVER),
+  DriverController.acceptRide,
 );
 
 export const DriverRoutes = router;

@@ -45,16 +45,26 @@ const acceptRide = async (rideId: string, driverId: string) => {
   }
 
   if (!driver.isAvailable) {
-    throw new AppError(
-      httpStatus.BAD_REQUEST,
-      "Driver is currently unavailable or already on a ride.",
-    );
+    throw new AppError(httpStatus.BAD_REQUEST, "You are currently unavailable");
   }
 
   if (driver.cancelledRidesCount! >= MAX_CANCEL_LIMIT) {
     throw new AppError(
       httpStatus.BAD_REQUEST,
       "Driver not available due to too many cancellations.",
+    );
+  }
+
+  const activeRider = await Ride.findOne({
+    driver: new Types.ObjectId(driverId),
+    status: {
+      $in: [RideStatus.ACCEPTED, RideStatus.PICKED_UP, RideStatus.IN_TRANSIT],
+    },
+  });
+  if (activeRider) {
+    throw new AppError(
+      httpStatus.BAD_REQUEST,
+      "You already have an active ride. Finish it before accepting a new one.",
     );
   }
 
@@ -67,6 +77,26 @@ const acceptRide = async (rideId: string, driverId: string) => {
   await ride.save();
 
   return ride;
+};
+
+//*-----------------------------------------------------------------currentRide------------------------------------------
+
+const currentRide = async (driverId: string) => {
+  const driver = await User.findById(driverId);
+  if (!driver || !driver.isApproved) {
+    throw new AppError(httpStatus.BAD_REQUEST, "Driver Not Found");
+  }
+  const ongoingRide = await Ride.findOne({
+    driver: driverId,
+    status: {
+      $in: [RideStatus.ACCEPTED, RideStatus.PICKED_UP, RideStatus.IN_TRANSIT],
+    },
+  });
+
+  if (!ongoingRide) {
+    throw new AppError(httpStatus.BAD_REQUEST, "You have not ongoing ride");
+  }
+  return ongoingRide;
 };
 
 //*-----------------------------------------------------------------updateAvailability------------------------------------------
@@ -84,5 +114,6 @@ const updateAvailability = async (driverId: string, isAvailable: boolean) => {
 export const DriverService = {
   getAvailableRides,
   acceptRide,
+  currentRide,
   updateAvailability,
 };

@@ -15,6 +15,12 @@ router.post(
   RideController.createRide,
 );
 
+router.get(
+  "/activeRide",
+  checkAuth(...Object.values(Role)),
+  RideController.activeRide,
+);
+
 router.patch(
   "/ride-cancel/:id",
   validateRequest(updateRideStatusSchema),

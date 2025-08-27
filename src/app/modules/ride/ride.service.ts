@@ -12,6 +12,7 @@ import { calculateDistanceInKm } from "../../utils/CalculateCost";
 import { Role } from "../user/user.interface";
 import { QueryBuilder } from "../../utils/queryBuilder";
 import mongoose from "mongoose";
+import { getPlaceName } from "../../utils/getPlaceName";
 
 //*-----------------------------------------------------------------create ride------------------------------------------
 const createRide = async (payload: CreateRideInput, userId: string) => {
@@ -19,10 +20,30 @@ const createRide = async (payload: CreateRideInput, userId: string) => {
   if (!rider || rider.isBlocked) {
     throw new AppError(httpStatus.BAD_REQUEST, "Invalid rider account");
   }
-  const PER_KM_COST = Number(envVars.PER_KM_COST);
 
-  // Step 1: Calculate distance
-  const distance = calculateDistanceInKm(
+  // Step 0: Check if rider already has an active ride
+  const activeRide = await Ride.findOne({
+    rider: userId,
+    status: {
+      $in: [
+        RideStatus.REQUESTED,
+        RideStatus.ACCEPTED,
+        RideStatus.PICKED_UP,
+        RideStatus.IN_TRANSIT,
+      ],
+    },
+  });
+
+  if (activeRide) {
+    throw new AppError(
+      httpStatus.BAD_REQUEST,
+      "You already have an active ride. Please complete or cancel it before creating a new one.",
+    );
+  }
+
+  const PER_KM_COST = Number(envVars.PER_KM_COST);
+  // Step 1: Calculate distance using Directions API
+  const distance = await calculateDistanceInKm(
     payload.pickupLocation,
     payload.destination,
   );
@@ -31,20 +52,53 @@ const createRide = async (payload: CreateRideInput, userId: string) => {
   // Step 2: Calculate estimated cost
   const estimatedCost = Number((distance * PER_KM_COST).toFixed(2));
 
+  // Step 3: Get addresses
+  const pickupAddress = await getPlaceName(
+    payload.pickupLocation.lat,
+    payload.pickupLocation.lng,
+  );
+  const destinationAddress = await getPlaceName(
+    payload.destination.lat,
+    payload.destination.lng,
+  );
+
   const ride = await Ride.create({
     rider: userId,
     pickupLocation: {
       type: "Point",
       coordinates: [payload.pickupLocation.lng, payload.pickupLocation.lat],
+      address: pickupAddress,
     },
     destination: {
       type: "Point",
       coordinates: [payload.destination.lng, payload.destination.lat],
+      address: destinationAddress,
     },
     status: RideStatus.REQUESTED,
     estimatedCost: estimatedCost,
     distance: formattedDistance,
   });
+
+  return ride;
+};
+
+//*-----------------------------------------------------------------activeRide------------------------------------------
+const activeRide = async (userId: string) => {
+  const ride = await Ride.findOne({
+    rider: userId,
+    status: {
+      $in: [
+        RideStatus.REQUESTED,
+        RideStatus.ACCEPTED,
+        RideStatus.PICKED_UP,
+        RideStatus.IN_TRANSIT,
+      ],
+    },
+  });
+
+  if (!ride) {
+    throw new AppError(httpStatus.NOT_FOUND, "You do not have any active ride");
+  }
 
   return ride;
 };
@@ -183,8 +237,12 @@ const updateRideStatus = async (
     throw new AppError(httpStatus.BAD_REQUEST, "Invalid driver account");
   }
 
-  if (!driver.isApproved || !driver.isAvailable) {
+  if (!driver.isApproved) {
     throw new AppError(httpStatus.BAD_REQUEST, "Invalid driver account");
+  }
+
+  if (!driver.isAvailable) {
+    throw new AppError(httpStatus.BAD_REQUEST, "You are currently unavailable");
   }
 
   if (driver.role !== Role.DRIVER) {
@@ -226,14 +284,11 @@ const updateRideStatus = async (
       break;
     case RideStatus.COMPLETED:
       ride.completedAt = new Date();
-      driver.isAvailable = true;
-      await driver.save();
       break;
     case RideStatus.CANCELLED:
       ride.cancellationReason = updateData.cancellationReason;
       ride.cancelledAt = new Date();
       driver.cancelledRidesCount! += 1;
-      driver.isAvailable = true;
       await driver.save();
       break;
   }
@@ -245,6 +300,7 @@ const updateRideStatus = async (
 
 export const RideService = {
   createRide,
+  activeRide,
   cancelRide,
   getRideHistory,
   getAllRides,

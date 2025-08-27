@@ -32,6 +32,17 @@ const acceptRide = (0, catchAsync_1.catchAsync)(async (req, res) => {
         data: result,
     });
 });
+//*--------------------------------------------------------acceptRide--------------------------------------------
+const currentRide = (0, catchAsync_1.catchAsync)(async (req, res) => {
+    const decodeToken = req.user;
+    const result = await driver_service_1.DriverService.currentRide(decodeToken.userId);
+    (0, sendResponse_1.sendResponse)(res, {
+        statusCode: http_status_codes_1.default.OK,
+        success: true,
+        message: "Ride retrieved successful",
+        data: result,
+    });
+});
 //*--------------------------------------------------------updateAvailability--------------------------------------------
 const updateAvailability = (0, catchAsync_1.catchAsync)(async (req, res) => {
     const decodeToken = req.user;
@@ -47,5 +58,6 @@ const updateAvailability = (0, catchAsync_1.catchAsync)(async (req, res) => {
 exports.DriverController = {
     getAvailableRides,
     acceptRide,
+    currentRide,
     updateAvailability,
 };

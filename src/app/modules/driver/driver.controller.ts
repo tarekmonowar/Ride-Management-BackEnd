@@ -36,6 +36,20 @@ const acceptRide = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+//*--------------------------------------------------------acceptRide--------------------------------------------
+
+const currentRide = catchAsync(async (req: Request, res: Response) => {
+  const decodeToken = req.user as JwtPayload;
+
+  const result = await DriverService.currentRide(decodeToken.userId);
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Ride retrieved successful",
+    data: result,
+  });
+});
+
 //*--------------------------------------------------------updateAvailability--------------------------------------------
 
 const updateAvailability = catchAsync(async (req: Request, res: Response) => {
@@ -57,5 +71,6 @@ const updateAvailability = catchAsync(async (req: Request, res: Response) => {
 export const DriverController = {
   getAvailableRides,
   acceptRide,
+  currentRide,
   updateAvailability,
 };

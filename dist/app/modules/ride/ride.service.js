@@ -14,32 +14,71 @@ const CalculateCost_1 = require("../../utils/CalculateCost");
 const user_interface_1 = require("../user/user.interface");
 const queryBuilder_1 = require("../../utils/queryBuilder");
 const mongoose_1 = __importDefault(require("mongoose"));
+const getPlaceName_1 = require("../../utils/getPlaceName");
 //*-----------------------------------------------------------------create ride------------------------------------------
 const createRide = async (payload, userId) => {
     const rider = await user_model_1.User.findById(userId);
     if (!rider || rider.isBlocked) {
         throw new AppError_1.default(http_status_codes_1.default.BAD_REQUEST, "Invalid rider account");
     }
+    // Step 0: Check if rider already has an active ride
+    const activeRide = await ride_model_1.Ride.findOne({
+        rider: userId,
+        status: {
+            $in: [
+                ride_interface_1.RideStatus.REQUESTED,
+                ride_interface_1.RideStatus.ACCEPTED,
+                ride_interface_1.RideStatus.PICKED_UP,
+                ride_interface_1.RideStatus.IN_TRANSIT,
+            ],
+        },
+    });
+    if (activeRide) {
+        throw new AppError_1.default(http_status_codes_1.default.BAD_REQUEST, "You already have an active ride. Please complete or cancel it before creating a new one.");
+    }
     const PER_KM_COST = Number(env_1.envVars.PER_KM_COST);
-    // Step 1: Calculate distance
-    const distance = (0, CalculateCost_1.calculateDistanceInKm)(payload.pickupLocation, payload.destination);
+    // Step 1: Calculate distance using Directions API
+    const distance = await (0, CalculateCost_1.calculateDistanceInKm)(payload.pickupLocation, payload.destination);
     const formattedDistance = Number(distance.toFixed(2));
     // Step 2: Calculate estimated cost
     const estimatedCost = Number((distance * PER_KM_COST).toFixed(2));
+    // Step 3: Get addresses
+    const pickupAddress = await (0, getPlaceName_1.getPlaceName)(payload.pickupLocation.lat, payload.pickupLocation.lng);
+    const destinationAddress = await (0, getPlaceName_1.getPlaceName)(payload.destination.lat, payload.destination.lng);
     const ride = await ride_model_1.Ride.create({
         rider: userId,
         pickupLocation: {
             type: "Point",
             coordinates: [payload.pickupLocation.lng, payload.pickupLocation.lat],
+            address: pickupAddress,
         },
         destination: {
             type: "Point",
             coordinates: [payload.destination.lng, payload.destination.lat],
+            address: destinationAddress,
         },
         status: ride_interface_1.RideStatus.REQUESTED,
         estimatedCost: estimatedCost,
         distance: formattedDistance,
     });
+    return ride;
+};
+//*-----------------------------------------------------------------activeRide------------------------------------------
+const activeRide = async (userId) => {
+    const ride = await ride_model_1.Ride.findOne({
+        rider: userId,
+        status: {
+            $in: [
+                ride_interface_1.RideStatus.REQUESTED,
+                ride_interface_1.RideStatus.ACCEPTED,
+                ride_interface_1.RideStatus.PICKED_UP,
+                ride_interface_1.RideStatus.IN_TRANSIT,
+            ],
+        },
+    });
+    if (!ride) {
+        throw new AppError_1.default(http_status_codes_1.default.NOT_FOUND, "You do not have any active ride");
+    }
     return ride;
 };
 //*-----------------------------------------------------------------cancel ride------------------------------------------
@@ -137,8 +176,11 @@ const updateRideStatus = async (userId, rideId, updateData) => {
     if (!driver) {
         throw new AppError_1.default(http_status_codes_1.default.BAD_REQUEST, "Invalid driver account");
     }
-    if (!driver.isApproved || !driver.isAvailable) {
+    if (!driver.isApproved) {
         throw new AppError_1.default(http_status_codes_1.default.BAD_REQUEST, "Invalid driver account");
+    }
+    if (!driver.isAvailable) {
+        throw new AppError_1.default(http_status_codes_1.default.BAD_REQUEST, "You are currently unavailable");
     }
     if (driver.role !== user_interface_1.Role.DRIVER) {
         throw new Error("You are not driver");
@@ -169,14 +211,11 @@ const updateRideStatus = async (userId, rideId, updateData) => {
             break;
         case ride_interface_1.RideStatus.COMPLETED:
             ride.completedAt = new Date();
-            driver.isAvailable = true;
-            await driver.save();
             break;
         case ride_interface_1.RideStatus.CANCELLED:
             ride.cancellationReason = updateData.cancellationReason;
             ride.cancelledAt = new Date();
             driver.cancelledRidesCount += 1;
-            driver.isAvailable = true;
             await driver.save();
             break;
     }
@@ -185,6 +224,7 @@ const updateRideStatus = async (userId, rideId, updateData) => {
 };
 exports.RideService = {
     createRide,
+    activeRide,
     cancelRide,
     getRideHistory,
     getAllRides,

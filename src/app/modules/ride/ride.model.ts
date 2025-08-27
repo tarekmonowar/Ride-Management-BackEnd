@@ -4,6 +4,10 @@ import { IRide, RideStatus } from "./ride.interface";
 const pointSchema = new mongoose.Schema({
   type: { type: String, enum: ["Point"], default: "Point" },
   coordinates: { type: [Number], required: true },
+  address: {
+    type: String,
+    required: false,
+  },
 });
 
 const rideSchema = new mongoose.Schema(

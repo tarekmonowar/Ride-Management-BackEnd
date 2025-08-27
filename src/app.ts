@@ -20,7 +20,6 @@ app.use(
   cors({
     origin: envVars.FRONTEND_URL,
     credentials: true,
-    allowedHeaders: ["Content-Type", "Authorization"],
   }),
 );
 app.use(

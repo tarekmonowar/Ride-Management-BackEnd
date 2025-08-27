@@ -19,6 +19,19 @@ const createRide = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+//*--------------------------------------------------------activeRide--------------------------------------------
+const activeRide = catchAsync(async (req: Request, res: Response) => {
+  const decodeToken = req.user as JwtPayload;
+
+  const result = await RideService.activeRide(decodeToken.userId);
+  sendResponse(res, {
+    success: true,
+    statusCode: httpStatus.OK,
+    message: "Ride retrieved successfully",
+    data: result,
+  });
+});
+
 //*--------------------------------------------------------cancelRide--------------------------------------------
 const cancelRide = catchAsync(async (req: Request, res: Response) => {
   const payload = req.body;
@@ -116,6 +129,7 @@ const updateRideStatus = catchAsync(async (req: Request, res: Response) => {
 
 export const RideController = {
   createRide,
+  activeRide,
   cancelRide,
   getRideHistory,
   getAllRides,

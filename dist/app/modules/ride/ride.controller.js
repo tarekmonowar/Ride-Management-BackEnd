@@ -20,6 +20,17 @@ const createRide = (0, catchAsync_1.catchAsync)(async (req, res) => {
         data: result,
     });
 });
+//*--------------------------------------------------------activeRide--------------------------------------------
+const activeRide = (0, catchAsync_1.catchAsync)(async (req, res) => {
+    const decodeToken = req.user;
+    const result = await ride_service_1.RideService.activeRide(decodeToken.userId);
+    (0, sendResponse_1.sendResponse)(res, {
+        success: true,
+        statusCode: http_status_codes_1.default.OK,
+        message: "Ride retrieved successfully",
+        data: result,
+    });
+});
 //*--------------------------------------------------------cancelRide--------------------------------------------
 const cancelRide = (0, catchAsync_1.catchAsync)(async (req, res) => {
     const payload = req.body;
@@ -89,6 +100,7 @@ const updateRideStatus = (0, catchAsync_1.catchAsync)(async (req, res) => {
 });
 exports.RideController = {
     createRide,
+    activeRide,
     cancelRide,
     getRideHistory,
     getAllRides,
