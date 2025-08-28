@@ -14,7 +14,7 @@ router.post(
   UserControllers.createUser,
 );
 
-//Route api/v1/user/all-users
+//Route api/v1/user/all-users(Admin only)
 router.get(
   "/all-users",
   checkAuth(Role.ADMIN, Role.SUPER_ADMIN),
@@ -24,7 +24,7 @@ router.get(
 //Route api/v1/user/me
 router.get("/me", checkAuth(...Object.values(Role)), UserControllers.getMe);
 
-//Route api/v1/user/:id
+//Route api/v1/user/:id(Admin only)
 router.get(
   "/:id",
   checkAuth(Role.ADMIN, Role.SUPER_ADMIN),

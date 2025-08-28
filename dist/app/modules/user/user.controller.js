@@ -23,6 +23,7 @@ const updateUser = (0, catchAsync_1.catchAsync)(async (req, res, next) => {
     const userId = req.params.id;
     const verifiedToken = req.user;
     const payload = req.body;
+    console.log(payload);
     const user = await user_service_1.UserServices.updateUser(userId, payload, verifiedToken);
     (0, sendResponse_1.sendResponse)(res, {
         success: true,

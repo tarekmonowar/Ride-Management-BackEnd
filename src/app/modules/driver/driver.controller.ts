@@ -21,35 +21,6 @@ const getAvailableRides = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-//*--------------------------------------------------------acceptRide--------------------------------------------
-
-const acceptRide = catchAsync(async (req: Request, res: Response) => {
-  const decodeToken = req.user as JwtPayload;
-  const rideId = req.params.id;
-
-  const result = await DriverService.acceptRide(rideId, decodeToken.userId);
-  sendResponse(res, {
-    statusCode: httpStatus.OK,
-    success: true,
-    message: "Ride accept successful",
-    data: result,
-  });
-});
-
-//*--------------------------------------------------------acceptRide--------------------------------------------
-
-const currentRide = catchAsync(async (req: Request, res: Response) => {
-  const decodeToken = req.user as JwtPayload;
-
-  const result = await DriverService.currentRide(decodeToken.userId);
-  sendResponse(res, {
-    statusCode: httpStatus.OK,
-    success: true,
-    message: "Ride retrieved successful",
-    data: result,
-  });
-});
-
 //*--------------------------------------------------------updateAvailability--------------------------------------------
 
 const updateAvailability = catchAsync(async (req: Request, res: Response) => {
@@ -68,9 +39,53 @@ const updateAvailability = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+//*--------------------------------------------------------currentRide--------------------------------------------
+
+const currentRide = catchAsync(async (req: Request, res: Response) => {
+  const decodeToken = req.user as JwtPayload;
+
+  const result = await DriverService.currentRide(decodeToken.userId);
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Ride retrieved successful",
+    data: result,
+  });
+});
+
+//*--------------------------------------------------------earnings--------------------------------------------
+
+const earnings = catchAsync(async (req: Request, res: Response) => {
+  const decodeToken = req.user as JwtPayload;
+
+  const result = await DriverService.earnings(decodeToken.userId);
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Earnings retrieved successfully",
+    data: result,
+  });
+});
+
+//*--------------------------------------------------------acceptRide--------------------------------------------
+
+const acceptRide = catchAsync(async (req: Request, res: Response) => {
+  const decodeToken = req.user as JwtPayload;
+  const rideId = req.params.id;
+
+  const result = await DriverService.acceptRide(rideId, decodeToken.userId);
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Ride accept successful",
+    data: result,
+  });
+});
+
 export const DriverController = {
   getAvailableRides,
   acceptRide,
   currentRide,
+  earnings,
   updateAvailability,
 };

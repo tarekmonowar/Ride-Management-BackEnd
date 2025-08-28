@@ -27,7 +27,7 @@ const changePassword = async (
   newPassword: string,
   decodedToken: JwtPayload,
 ) => {
-  console.log("Decoded Token:", decodedToken);
+  // console.log("Decoded Token:", decodedToken);
 
   // 1. Find user by ID from token
   const user = await User.findById(decodedToken.userId);

@@ -18,11 +18,14 @@ router.patch(
   checkAuth(Role.DRIVER),
   DriverController.updateAvailability,
 );
+
 router.get(
   "/currentRide",
   checkAuth(Role.DRIVER),
   DriverController.currentRide,
 );
+
+router.get("/earnings", checkAuth(Role.DRIVER), DriverController.earnings);
 
 router.patch(
   "/accept/:id",

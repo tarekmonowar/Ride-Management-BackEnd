@@ -26,6 +26,56 @@ const getAvailableRides = async (query) => {
         meta,
     };
 };
+//*-----------------------------------------------------------------updateAvailability------------------------------------------
+const updateAvailability = async (driverId, isAvailable) => {
+    const driver = await user_model_1.User.findById(driverId);
+    if (!driver || !driver.isApproved) {
+        throw new AppError_1.default(http_status_codes_1.default.BAD_REQUEST, "Driver Not Found");
+    }
+    driver.isAvailable = isAvailable;
+    await driver.save();
+    return driver;
+};
+//*-----------------------------------------------------------------currentRide------------------------------------------
+const currentRide = async (driverId) => {
+    const driver = await user_model_1.User.findById(driverId);
+    if (!driver || !driver.isApproved) {
+        throw new AppError_1.default(http_status_codes_1.default.BAD_REQUEST, "Driver Not Found");
+    }
+    const ongoingRide = await ride_model_1.Ride.findOne({
+        driver: driverId,
+        status: {
+            $in: [ride_interface_1.RideStatus.ACCEPTED, ride_interface_1.RideStatus.PICKED_UP, ride_interface_1.RideStatus.IN_TRANSIT],
+        },
+    });
+    if (!ongoingRide) {
+        throw new AppError_1.default(http_status_codes_1.default.BAD_REQUEST, "You have not ongoing ride");
+    }
+    return ongoingRide;
+};
+//-----------------------------------------------------------------earnings------------------------------------------
+const earnings = async (driverId) => {
+    // Check driver
+    const driver = await user_model_1.User.findById(driverId);
+    if (!driver || !driver.isApproved) {
+        throw new AppError_1.default(http_status_codes_1.default.BAD_REQUEST, "Driver Not Found");
+    }
+    // Get all completed rides for this driver
+    const completedRides = await ride_model_1.Ride.find({
+        driver: driverId,
+        status: ride_interface_1.RideStatus.COMPLETED,
+    });
+    if (!completedRides.length) {
+        throw new AppError_1.default(http_status_codes_1.default.BAD_REQUEST, "You have not completed any rides");
+    }
+    // Calculate total earnings
+    const totalEarnings = completedRides.reduce((sum, ride) => sum + (ride.estimatedCost || 0), 0);
+    return {
+        totalEarnings,
+        totalRides: completedRides.length,
+        rides: completedRides,
+    };
+};
 //*-----------------------------------------------------------------acceptRide------------------------------------------
 const acceptRide = async (rideId, driverId) => {
     const ride = await ride_model_1.Ride.findById(rideId);
@@ -58,41 +108,14 @@ const acceptRide = async (rideId, driverId) => {
     ride.driver = new mongoose_1.Types.ObjectId(driverId);
     ride.status = ride_interface_1.RideStatus.ACCEPTED;
     ride.acceptedAt = new Date();
-    driver.isAvailable = false;
     await driver.save();
     await ride.save();
     return ride;
-};
-//*-----------------------------------------------------------------currentRide------------------------------------------
-const currentRide = async (driverId) => {
-    const driver = await user_model_1.User.findById(driverId);
-    if (!driver || !driver.isApproved) {
-        throw new AppError_1.default(http_status_codes_1.default.BAD_REQUEST, "Driver Not Found");
-    }
-    const ongoingRide = await ride_model_1.Ride.findOne({
-        driver: driverId,
-        status: {
-            $in: [ride_interface_1.RideStatus.ACCEPTED, ride_interface_1.RideStatus.PICKED_UP, ride_interface_1.RideStatus.IN_TRANSIT],
-        },
-    });
-    if (!ongoingRide) {
-        throw new AppError_1.default(http_status_codes_1.default.BAD_REQUEST, "You have not ongoing ride");
-    }
-    return ongoingRide;
-};
-//*-----------------------------------------------------------------updateAvailability------------------------------------------
-const updateAvailability = async (driverId, isAvailable) => {
-    const driver = await user_model_1.User.findById(driverId);
-    if (!driver || !driver.isApproved) {
-        throw new AppError_1.default(http_status_codes_1.default.BAD_REQUEST, "Driver Not Found");
-    }
-    driver.isAvailable = isAvailable;
-    await driver.save();
-    return driver;
 };
 exports.DriverService = {
     getAvailableRides,
     acceptRide,
     currentRide,
+    earnings,
     updateAvailability,
 };

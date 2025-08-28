@@ -26,6 +26,72 @@ const getAvailableRides = async (query: Record<string, string>) => {
   };
 };
 
+//*-----------------------------------------------------------------updateAvailability------------------------------------------
+
+const updateAvailability = async (driverId: string, isAvailable: boolean) => {
+  const driver = await User.findById(driverId);
+  if (!driver || !driver.isApproved) {
+    throw new AppError(httpStatus.BAD_REQUEST, "Driver Not Found");
+  }
+  driver.isAvailable = isAvailable;
+  await driver.save();
+  return driver;
+};
+
+//*-----------------------------------------------------------------currentRide------------------------------------------
+
+const currentRide = async (driverId: string) => {
+  const driver = await User.findById(driverId);
+  if (!driver || !driver.isApproved) {
+    throw new AppError(httpStatus.BAD_REQUEST, "Driver Not Found");
+  }
+  const ongoingRide = await Ride.findOne({
+    driver: driverId,
+    status: {
+      $in: [RideStatus.ACCEPTED, RideStatus.PICKED_UP, RideStatus.IN_TRANSIT],
+    },
+  });
+
+  if (!ongoingRide) {
+    throw new AppError(httpStatus.BAD_REQUEST, "You have not ongoing ride");
+  }
+  return ongoingRide;
+};
+//-----------------------------------------------------------------earnings------------------------------------------
+
+const earnings = async (driverId: string) => {
+  // Check driver
+  const driver = await User.findById(driverId);
+  if (!driver || !driver.isApproved) {
+    throw new AppError(httpStatus.BAD_REQUEST, "Driver Not Found");
+  }
+
+  // Get all completed rides for this driver
+  const completedRides = await Ride.find({
+    driver: driverId,
+    status: RideStatus.COMPLETED,
+  });
+
+  if (!completedRides.length) {
+    throw new AppError(
+      httpStatus.BAD_REQUEST,
+      "You have not completed any rides",
+    );
+  }
+
+  // Calculate total earnings
+  const totalEarnings = completedRides.reduce(
+    (sum, ride) => sum + (ride.estimatedCost || 0),
+    0,
+  );
+
+  return {
+    totalEarnings,
+    totalRides: completedRides.length,
+    rides: completedRides,
+  };
+};
+
 //*-----------------------------------------------------------------acceptRide------------------------------------------
 
 const acceptRide = async (rideId: string, driverId: string) => {
@@ -72,48 +138,16 @@ const acceptRide = async (rideId: string, driverId: string) => {
   ride.status = RideStatus.ACCEPTED;
   ride.acceptedAt = new Date();
 
-  driver.isAvailable = false;
   await driver.save();
   await ride.save();
 
   return ride;
 };
 
-//*-----------------------------------------------------------------currentRide------------------------------------------
-
-const currentRide = async (driverId: string) => {
-  const driver = await User.findById(driverId);
-  if (!driver || !driver.isApproved) {
-    throw new AppError(httpStatus.BAD_REQUEST, "Driver Not Found");
-  }
-  const ongoingRide = await Ride.findOne({
-    driver: driverId,
-    status: {
-      $in: [RideStatus.ACCEPTED, RideStatus.PICKED_UP, RideStatus.IN_TRANSIT],
-    },
-  });
-
-  if (!ongoingRide) {
-    throw new AppError(httpStatus.BAD_REQUEST, "You have not ongoing ride");
-  }
-  return ongoingRide;
-};
-
-//*-----------------------------------------------------------------updateAvailability------------------------------------------
-
-const updateAvailability = async (driverId: string, isAvailable: boolean) => {
-  const driver = await User.findById(driverId);
-  if (!driver || !driver.isApproved) {
-    throw new AppError(httpStatus.BAD_REQUEST, "Driver Not Found");
-  }
-  driver.isAvailable = isAvailable;
-  await driver.save();
-  return driver;
-};
-
 export const DriverService = {
   getAvailableRides,
   acceptRide,
   currentRide,
+  earnings,
   updateAvailability,
 };

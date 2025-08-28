@@ -20,29 +20,6 @@ const getAvailableRides = (0, catchAsync_1.catchAsync)(async (req, res) => {
         meta: result.meta,
     });
 });
-//*--------------------------------------------------------acceptRide--------------------------------------------
-const acceptRide = (0, catchAsync_1.catchAsync)(async (req, res) => {
-    const decodeToken = req.user;
-    const rideId = req.params.id;
-    const result = await driver_service_1.DriverService.acceptRide(rideId, decodeToken.userId);
-    (0, sendResponse_1.sendResponse)(res, {
-        statusCode: http_status_codes_1.default.OK,
-        success: true,
-        message: "Ride accept successful",
-        data: result,
-    });
-});
-//*--------------------------------------------------------acceptRide--------------------------------------------
-const currentRide = (0, catchAsync_1.catchAsync)(async (req, res) => {
-    const decodeToken = req.user;
-    const result = await driver_service_1.DriverService.currentRide(decodeToken.userId);
-    (0, sendResponse_1.sendResponse)(res, {
-        statusCode: http_status_codes_1.default.OK,
-        success: true,
-        message: "Ride retrieved successful",
-        data: result,
-    });
-});
 //*--------------------------------------------------------updateAvailability--------------------------------------------
 const updateAvailability = (0, catchAsync_1.catchAsync)(async (req, res) => {
     const decodeToken = req.user;
@@ -55,9 +32,44 @@ const updateAvailability = (0, catchAsync_1.catchAsync)(async (req, res) => {
         data: result,
     });
 });
+//*--------------------------------------------------------currentRide--------------------------------------------
+const currentRide = (0, catchAsync_1.catchAsync)(async (req, res) => {
+    const decodeToken = req.user;
+    const result = await driver_service_1.DriverService.currentRide(decodeToken.userId);
+    (0, sendResponse_1.sendResponse)(res, {
+        statusCode: http_status_codes_1.default.OK,
+        success: true,
+        message: "Ride retrieved successful",
+        data: result,
+    });
+});
+//*--------------------------------------------------------earnings--------------------------------------------
+const earnings = (0, catchAsync_1.catchAsync)(async (req, res) => {
+    const decodeToken = req.user;
+    const result = await driver_service_1.DriverService.earnings(decodeToken.userId);
+    (0, sendResponse_1.sendResponse)(res, {
+        statusCode: http_status_codes_1.default.OK,
+        success: true,
+        message: "Earnings retrieved successfully",
+        data: result,
+    });
+});
+//*--------------------------------------------------------acceptRide--------------------------------------------
+const acceptRide = (0, catchAsync_1.catchAsync)(async (req, res) => {
+    const decodeToken = req.user;
+    const rideId = req.params.id;
+    const result = await driver_service_1.DriverService.acceptRide(rideId, decodeToken.userId);
+    (0, sendResponse_1.sendResponse)(res, {
+        statusCode: http_status_codes_1.default.OK,
+        success: true,
+        message: "Ride accept successful",
+        data: result,
+    });
+});
 exports.DriverController = {
     getAvailableRides,
     acceptRide,
     currentRide,
+    earnings,
     updateAvailability,
 };
