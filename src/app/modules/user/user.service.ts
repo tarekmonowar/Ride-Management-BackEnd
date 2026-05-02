@@ -8,8 +8,8 @@ import { User } from "./user.model";
 import { userSearchableFields } from "./user.constant";
 
 //*--------------------------------------------------------- create user------------------------------------------------
-const createUser = async (payload: Partial<IUser>) => {
-  const { email, password, ...rest } = payload;
+const createUser = async (payload: Partial<IUser> & { vehicleInfo?: any }) => {
+  const { email, password, vehicleInfo, ...rest } = payload;
 
   const isUserExist = await User.findOne({ email });
 
@@ -23,12 +23,24 @@ const createUser = async (payload: Partial<IUser>) => {
     provider: "credentials",
     providerId: email as string,
   };
-  const user = await User.create({
+
+  const userData: any = {
     email,
     password: hashedPassword,
     auths: [authProvider],
     ...rest,
-  });
+  };
+
+  if (vehicleInfo) {
+    userData.vehicle = vehicleInfo;
+  }
+
+  if (rest.role === Role.DRIVER) {
+    userData.isApproved = false;
+    userData.applicationStatus = "pending";
+  }
+
+  const user = await User.create(userData);
 
   const userWithoutPassword = user?.toObject();
   delete userWithoutPassword.password;

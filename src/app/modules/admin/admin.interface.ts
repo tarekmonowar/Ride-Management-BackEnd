@@ -5,6 +5,8 @@ export interface IRidePaymentSummary {
   totalCompletedPayments: number;
   totalPendingRides: number;
   totalPendingPayments: number;
+  cashTotal: number;
+  stripeTotal: number;
   ridesByStatus: {
     [key in RideStatus]: {
       count: number;

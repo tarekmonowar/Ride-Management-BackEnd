@@ -33,6 +33,19 @@ export const createUserZodSchema = z.object({
     .string()
     .max(200, { message: "Address cannot exceed 200 characters." })
     .optional(),
+
+  role: z.enum(["RIDER", "DRIVER"]).optional(),
+  nidPhoto: z.string().optional(),
+  drivingLicensePhoto: z.string().optional(),
+  vehicleInfo: z
+    .object({
+      type: z.enum(["bike", "car"]),
+      make: z.string().min(1, "Make is required"),
+      model: z.string().min(1, "Model is required"),
+      color: z.string().min(1, "Color is required"),
+      licensePlate: z.string().min(1, "License plate is required"),
+    })
+    .optional(),
 });
 
 //user Update ZOD validations
@@ -58,7 +71,10 @@ export const updateUserZodSchema = z.object({
   isAvailable: z.boolean().optional(),
   vehicle: z
     .object({
+      type: z.enum(["bike", "car"]).optional(),
+      make: z.string().optional(),
       model: z.string().min(1, "Model is required"),
+      color: z.string().optional(),
       licensePlate: z.string().min(1, "License plate is required"),
     })
     .optional(),

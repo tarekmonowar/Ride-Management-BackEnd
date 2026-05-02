@@ -14,5 +14,20 @@ router.get(
   checkAuth(...Object.values(Role)),
   AdminController.getStatistics,
 );
+router.patch(
+  "/review-driver/:driverId",
+  checkAuth(Role.SUPER_ADMIN),
+  AdminController.reviewDriver,
+);
+router.get(
+  "/settlements",
+  checkAuth(Role.SUPER_ADMIN),
+  AdminController.getSettlements,
+);
+router.post(
+  "/settle/:driverId",
+  checkAuth(Role.SUPER_ADMIN),
+  AdminController.settleDriver,
+);
 
 export const AdminRoutes = router;

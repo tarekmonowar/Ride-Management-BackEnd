@@ -9,9 +9,28 @@ import { envVars } from "../../config/env";
 
 //*-----------------------------------------------------------------getAvailableRides------------------------------------------
 
-const getAvailableRides = async (query: Record<string, string>) => {
+const getAvailableRides = async (
+  query: Record<string, string>,
+  driverId: string,
+) => {
+  // Find the driver to get their vehicle type
+  const driver = await User.findById(driverId);
+  if (!driver || !driver.isApproved) {
+    throw new AppError(
+      httpStatus.BAD_REQUEST,
+      "Driver Not Found or Not Approved",
+    );
+  }
+
+  const driverVehicleType = driver.vehicle?.type;
+
+  const baseFilter: any = { status: RideStatus.REQUESTED };
+  if (driverVehicleType) {
+    baseFilter.vehicleType = driverVehicleType;
+  }
+
   const forcedQuery = { ...query, status: RideStatus.REQUESTED };
-  const queryBuilder = new QueryBuilder(Ride.find(), forcedQuery);
+  const queryBuilder = new QueryBuilder(Ride.find(baseFilter), forcedQuery);
 
   const rideData = queryBuilder.filter().fields().sort().paginate();
 
@@ -112,6 +131,18 @@ const acceptRide = async (rideId: string, driverId: string) => {
 
   if (!driver.isAvailable) {
     throw new AppError(httpStatus.BAD_REQUEST, "You are currently unavailable");
+  }
+
+  // Validate driver's vehicle type matches ride's vehicleType
+  if (
+    ride.vehicleType &&
+    driver.vehicle?.type &&
+    ride.vehicleType !== driver.vehicle.type
+  ) {
+    throw new AppError(
+      httpStatus.BAD_REQUEST,
+      `Your vehicle type (${driver.vehicle.type}) does not match the ride's required vehicle type (${ride.vehicleType})`,
+    );
   }
 
   if (driver.cancelledRidesCount! >= MAX_CANCEL_LIMIT) {

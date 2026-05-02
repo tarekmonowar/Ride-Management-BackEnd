@@ -22,7 +22,7 @@ const getNewAccessToken = async (refreshToken) => {
 };
 //*---------------------------------------------change Password ----------------------------
 const changePassword = async (oldPassword, newPassword, decodedToken) => {
-    console.log("Decoded Token:", decodedToken);
+    // console.log("Decoded Token:", decodedToken);
     // 1. Find user by ID from token
     const user = await user_model_1.User.findById(decodedToken.userId);
     if (!user) {

@@ -49,8 +49,11 @@ const createRide = async (payload: CreateRideInput, userId: string) => {
   );
   const formattedDistance = Number(distance.toFixed(2));
 
-  // Step 2: Calculate estimated cost
-  const estimatedCost = Number((distance * PER_KM_COST).toFixed(2));
+  // Step 2: Calculate estimated cost based on vehicle type
+  const vehicleMultiplier = payload.vehicleType === "bike" ? 0.6 : 1;
+  const estimatedCost = Number(
+    (distance * PER_KM_COST * vehicleMultiplier).toFixed(2),
+  );
 
   // Step 3: Get addresses
   const pickupAddress = await getPlaceName(
@@ -77,6 +80,7 @@ const createRide = async (payload: CreateRideInput, userId: string) => {
     status: RideStatus.REQUESTED,
     estimatedCost: estimatedCost,
     distance: formattedDistance,
+    vehicleType: payload.vehicleType,
   });
 
   return ride;
@@ -284,6 +288,7 @@ const updateRideStatus = async (
       break;
     case RideStatus.COMPLETED:
       ride.completedAt = new Date();
+      ride.paymentStatus = "pending";
       break;
     case RideStatus.CANCELLED:
       ride.cancellationReason = updateData.cancellationReason;

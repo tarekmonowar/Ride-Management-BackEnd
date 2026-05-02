@@ -18,6 +18,7 @@ export interface LocationInput {
 export interface CreateRideInput {
   pickupLocation: LocationInput;
   destination: LocationInput;
+  vehicleType: "bike" | "car";
 }
 
 export interface UpdateRideStatusInput {
@@ -39,6 +40,11 @@ export interface IRide {
   status: RideStatus;
   distance?: number;
   estimatedCost?: number;
+  vehicleType?: "bike" | "car";
+  paymentMethod?: "stripe" | "cash";
+  paymentStatus?: "pending" | "paid" | "driver_confirmed";
+  stripePaymentId?: string;
+  isSettled?: boolean;
   requestedAt: Date;
   acceptedAt?: Date;
   pickedUpAt?: Date;

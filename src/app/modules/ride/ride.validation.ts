@@ -9,6 +9,7 @@ export const createRideZodSchema = z.object({
     lat: z.number(),
     lng: z.number(),
   }),
+  vehicleType: z.enum(["bike", "car"]),
 });
 
 export const updateRideStatusSchema = z.object({

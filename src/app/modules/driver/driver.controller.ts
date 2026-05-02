@@ -8,9 +8,11 @@ import { DriverService } from "./driver.service";
 //*--------------------------------------------------------getAvailableRides--------------------------------------------
 
 const getAvailableRides = catchAsync(async (req: Request, res: Response) => {
+  const decodeToken = req.user as JwtPayload;
   const query = req.query;
   const result = await DriverService.getAvailableRides(
     query as Record<string, string>,
+    decodeToken.userId,
   );
   sendResponse(res, {
     statusCode: httpStatus.OK,
